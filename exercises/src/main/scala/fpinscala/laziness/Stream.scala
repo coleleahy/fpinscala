@@ -1,7 +1,26 @@
 package fpinscala.laziness
 
-import Stream._
+import annotation._
+import scala.collection.mutable.ListBuffer
+
 trait Stream[+A] {
+  import Stream._
+
+  def toList: List[A] = {
+    val buf = ListBuffer.empty[A]
+
+    @tailrec
+    def go(s: Stream[A]): List[A] =
+      s match {
+        case Empty => buf.toList
+        case Cons(h, t) => {
+          buf += h()
+          go(t())
+        }
+      }
+
+    go(this)
+  }
 
   def foldRight[B](z: => B)(f: (A, => B) => B): B = // The arrow `=>` in front of the argument type `B` means that the function `f` takes its second argument by name and may choose not to evaluate it.
     this match {
@@ -12,14 +31,35 @@ trait Stream[+A] {
   def exists(p: A => Boolean): Boolean = 
     foldRight(false)((a, b) => p(a) || b) // Here `b` is the unevaluated recursive step that folds the tail of the stream. If `p(a)` returns `true`, `b` will never be evaluated and the computation terminates early.
 
-  @annotation.tailrec
+  @tailrec
   final def find(f: A => Boolean): Option[A] = this match {
     case Empty => None
     case Cons(h, t) => if (f(h())) Some(h()) else t().find(f)
   }
-  def take(n: Int): Stream[A] = ???
 
-  def drop(n: Int): Stream[A] = ???
+  def take(n: Int): Stream[A] =
+    (n, this) match {
+      case (0, _) | (_, Empty) => empty[A]
+      case (_, Cons(h, t)) => cons(h(), t().take(n - 1))
+    }
+
+  @tailrec
+  final def drop(n: Int): Stream[A] =
+    (n, this) match {
+      case (0, _) | (_, Empty) => this
+      case (_, Cons(_, t)) => t().drop(n - 1)
+    }
+
+  def drop2(n: Int): Stream[A] = {
+    @tailrec
+    def go(n: Int, s: Stream[A]): Stream[A] =
+      (n, s) match {
+        case (0, _) | (_, Empty) => s
+        case (_, c: Cons[A]) => go(n - 1, c.t())
+      }
+
+    go(n, this)
+  }
 
   def takeWhile(p: A => Boolean): Stream[A] = ???
 
