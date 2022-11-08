@@ -202,6 +202,17 @@ case class State[S, +A](run: S => (A, S)) {
       val (a, s1) = run(s0)
       f(a).run(s1)
     }
+
+  def get: State[S, S] =
+    State { s => (s, s) }
+
+  def set(s: S): State[S, Unit] =
+    State { _ => ((), s) }
+
+  def modify(f: S => S): State[S, Unit] = for {
+    s <- get
+    _ <- set(f(s))
+  } yield ()
 }
 
 sealed trait Input
@@ -220,6 +231,30 @@ object State {
     fs.foldRight(unit[S, List[A]](Nil)) { (f, acc) =>
       f.map2(acc)(_ :: _)
     }
+}
 
-  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = ???
+object Candy {
+  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = {
+    val z: State[Machine, (Int, Int)] =
+      State { machine =>
+        ((machine.coins, machine.candies), machine)
+      }
+
+    inputs.foldLeft(z) { (acc, input) =>
+      State { machine =>
+        (input, acc.run(machine)._2) match {
+          case (Coin, Machine(true, candies, coins)) if candies > 0  =>
+            ((candies, coins + 1), Machine(false, candies, coins + 1))
+          case (Coin, Machine(true, 0, coins)) =>
+              ((0, coins + 1), Machine(true, 0, coins + 1))
+          case (Coin, m @ Machine(false, candies, coins)) =>
+              ((candies, coins), m)
+          case (Turn, Machine(false, candies, coins)) =>
+            ((candies - 1, coins), Machine(true, candies - 1, coins))
+          case (Turn, m @ Machine(true, candies, coins)) =>
+            ((candies, coins), m)
+           }
+      }
+    }
+  }
 }
