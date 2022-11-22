@@ -1,7 +1,7 @@
-import fpinscala.parallelism.{Examples, Par}
+import fpinscala.parallelism._
 import java.util.concurrent.{ExecutorService, Executors}
 
-val es: ExecutorService = Executors.newFixedThreadPool(20)
+val es: ExecutorService = Executors.newCachedThreadPool()
 
 Par.parFilterOldOld(List(1, 2, 3, 4, 5))(_ % 2 == 0).apply(es).get()
 

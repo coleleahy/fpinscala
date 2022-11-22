@@ -116,16 +116,33 @@ object Par {
   def delay[A](fa: => Par[A]): Par[A] = 
     es => fa(es)
 
+  def flatMap[A, B](a: Par[A])(f: A => Par[B]): Par[B] =
+    es => {
+      val aa = run(es)(a).get()
+      run(es)(f(aa))
+    }
+
+  def choiceN[A](cond: Par[Int])(choices: List[Par[A]]): Par[A] =
+    flatMap(cond)(choices(_))
+
   def choice[A](cond: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
-    es => 
-      if (run(es)(cond).get) t(es) // Notice we are blocking on the result of `cond`.
-      else f(es)
+    flatMap(cond) {
+      case true => t
+      case false => f
+    }
 
   /* Gives us infix syntax for `Par`. */
   implicit class ParOps[A](a: Par[A]) {
     def map2[B, C](b: Par[B])(f: (A, B) => C): Par[C] =
       Par.map2(a, b)(f)
   }
+
+  /*
+  map(y)(g) == map(y)(g)                      // Identity.
+  map(map(y)(g))(id) == map(y)(g)             // By law "map(y)(id) == y", taking map(y)(g) as "y".
+  map(map(y)(g))(id) == map(y)(id compose g)  // Because id compose g is just g.
+  map(map(y)(g))(f) == map(y)(f compose g)    // By abstracting away from "id" on the previous line. Why can we do this? Because map can't possibly behave differently for "id" than for any other function "f", since map[A, B] is parametrically polymorphic (which means it couldn't possibly follow different code paths based on the details of the function of type A => B that's passed in).
+   */
 }
 
 object Examples {

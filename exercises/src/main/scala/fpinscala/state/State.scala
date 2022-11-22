@@ -112,6 +112,12 @@ object RNG {
         nonNegativeLessThan(n)
     }
 
+  def boolean: Rand[Boolean] =
+    map(nonNegativeLessThan(2)) {
+      case 0 => true
+      case 1 => false
+    }
+
   val double: Rand[Double] =
     map(nonNegativeInt) { n =>
       (-n.toDouble / Int.MinValue)
@@ -215,12 +221,6 @@ case class State[S, +A](run: S => (A, S)) {
   } yield ()
 }
 
-sealed trait Input
-case object Coin extends Input
-case object Turn extends Input
-
-case class Machine(locked: Boolean, candies: Int, coins: Int)
-
 object State {
   type Rand[A] = State[RNG, A]
 
@@ -232,6 +232,12 @@ object State {
       f.map2(acc)(_ :: _)
     }
 }
+
+sealed trait Input
+case object Coin extends Input
+case object Turn extends Input
+
+case class Machine(locked: Boolean, candies: Int, coins: Int)
 
 object Candy {
   def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = {
