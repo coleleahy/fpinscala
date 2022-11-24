@@ -21,3 +21,7 @@ Examples.wordCount(
     "That is right"
   )
 ).apply(es).get()
+
+1 + 3
+
+2 + 4

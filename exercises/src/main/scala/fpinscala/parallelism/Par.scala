@@ -29,10 +29,10 @@ object Par {
 
   def asyncF[A, B](f: A => B): A => Par[B] =
     a => lazyUnit(f(a))
-  
+
   def map2[A, B, C](a: Par[A], b: Par[B])(f: (A,B) => C): Par[C] = // `map2` doesn't evaluate the call to `f` in a separate logical thread, in accord with our design choice of having `fork` be the sole function in the API for controlling parallelism. We can always do `fork(map2(a,b)(f))` if we want the evaluation of `f` to occur in a separate thread.
     es => {
-      val af = a(es) 
+      val af = a(es)
       val bf = b(es)
       UnitFuture(f(af.get, bf.get)) // This implementation of `map2` does _not_ respect timeouts, and eagerly waits for the returned futures. This means that even if you have passed in "forked" arguments, using this map2 on them will make them wait. It simply passes the `ExecutorService` on to both `Par` values, waits for the results of the Futures `af` and `bf`, applies `f` to them, and wraps them in a `UnitFuture`. In order to respect timeouts, we'd need a new `Future` implementation that records the amount of time spent evaluating `af`, then subtracts that time from the available time allocated for evaluating `bf`.
     }
@@ -110,10 +110,10 @@ object Par {
     map(parOptions)(_.flatten)
   }
 
-  def equal[A](e: ExecutorService)(p: Par[A], p2: Par[A]): Boolean = 
+  def equal[A](e: ExecutorService)(p: Par[A], p2: Par[A]): Boolean =
     p(e).get == p2(e).get
 
-  def delay[A](fa: => Par[A]): Par[A] = 
+  def delay[A](fa: => Par[A]): Par[A] =
     es => fa(es)
 
   def flatMap[A, B](a: Par[A])(f: A => Par[B]): Par[B] =
@@ -150,7 +150,7 @@ object Examples {
   def sum(ints: IndexedSeq[Int]): Int = // `IndexedSeq` is a superclass of random-access sequences like `Vector` in the standard library. Unlike lists, these sequences provide an efficient `splitAt` method for dividing them into two parts at a particular index.
     if (ints.size <= 1)
       ints.headOption getOrElse 0 // `headOption` is a method defined on all collections in Scala. We saw this function in chapter 3.
-    else { 
+    else {
       val (l,r) = ints.splitAt(ints.length/2) // Divide the sequence in half using the `splitAt` function.
       sum(l) + sum(r) // Recursively sum both halves and add the results together.
     }
