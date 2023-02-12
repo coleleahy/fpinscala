@@ -19,13 +19,11 @@ object Prop {
   def forAll[A](gen: Gen[A])(f: A => Boolean): Prop = ???
 }
 
-//trait Gen[A] {
-//  def map[A,B](f: A => B): Gen[B] = ???
-//  def flatMap[A,B](f: A => Gen[B]): Gen[B] = ???
-//}
-
 case class Gen[A](sample: State[RNG, A]) {
   import Gen._
+
+  def map[B](f: A => B): Gen[B] =
+    Gen(sample.map(f))
 
   def flatMap[B](f: A => Gen[B]): Gen[B] =
     Gen(sample.flatMap(f(_).sample))
