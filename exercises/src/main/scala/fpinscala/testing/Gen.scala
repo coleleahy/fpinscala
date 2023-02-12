@@ -6,7 +6,7 @@ import fpinscala.parallelism._
 import fpinscala.parallelism.Par.Par
 import Gen._
 import Prop._
-import java.util.concurrent.{Executors,ExecutorService}
+import java.util.concurrent.{Executors, ExecutorService}
 
 trait Prop {
   def check: Either[(FailedCase, SuccessCount), SuccessCount] = ???
@@ -35,7 +35,7 @@ case class Gen[A](sample: State[RNG, A]) {
 
   def union(other: Gen[A]): Gen[A] = {
     boolean.flatMap {
-      case true => this
+      case true  => this
       case false => other
     }
   }
@@ -54,17 +54,32 @@ object Gen {
   def choose(start: Int, stopExclusive: Int): Gen[Int] =
     Gen(State(RNG.nonNegativeLessThan(stopExclusive - start)).map(_ + start))
 
-  def choose2(start: Int, stopExclusive: Int): Gen[(Int, Int)] = {
-    val choose1 = choose(start, stopExclusive).sample
-    val choose2 = choose1.map2(choose1) { (_, _) }
-    Gen(choose2)
+  def chooseTwo(start: Int, stopExclusive: Int): Gen[(Int, Int)] = {
+    val chooseOne = choose(start, stopExclusive).sample
+    val chooseTwo = chooseOne.map2(chooseOne) { (_, _) }
+    Gen(chooseTwo)
   }
 
   def option[A](g: Gen[A]): Gen[Option[A]] =
     Gen(g.sample.map(Option.apply))
+
+  def string(maxLength: Int): Gen[String] = {
+    val length = RNG.nonNegativeLessThan(maxLength)
+
+    val codes = RNG.flatMap(length) { n =>
+      RNG.sequence(
+        List.fill(n)(
+          RNG.map(RNG.nonNegativeLessThan(126 - 32)) { i =>
+            (i + 32).toChar.toString
+          }
+        )
+      )
+    }
+
+    val string = RNG.map(codes)(_.mkString)
+
+    Gen(State(string))
+  }
 }
 
-trait SGen[+A] {
-
-}
-
+trait SGen[+A] {}

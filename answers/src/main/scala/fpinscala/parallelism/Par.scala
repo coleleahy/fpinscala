@@ -40,7 +40,7 @@ object Par {
 
   def sortPar(parList: Par[List[Int]]) = map(parList)(_.sorted)
 
-  def sequence_simple[A](l: List[Par[A]]): Par[List[A]] =
+  def sequenceSimple[A](l: List[Par[A]]): Par[List[A]] =
     l.foldRight[Par[List[A]]](unit(List()))((h,t) => map2(h,t)(_ :: _))
 
   // This implementation forks the recursive step off to a new logical thread,

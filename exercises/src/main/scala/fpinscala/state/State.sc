@@ -4,8 +4,6 @@ val rng = RNG.Simple(42)
 
 RNG.nonNegativeInt(rng)._1
 
-RNG.doubleOld(rng)._1
-
 RNG.double(rng)._1
 
 RNG.ints(4)(rng)._1
@@ -18,3 +16,5 @@ RNG.sequence(
     RNG.unit(39) ::
     Nil
 ) { rng }
+
+RNG.flatMap(RNG.int) { n => RNG.nonNegativeLessThan(n) }.apply(rng)
