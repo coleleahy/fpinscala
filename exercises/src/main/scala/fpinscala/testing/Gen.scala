@@ -32,13 +32,6 @@ case class Gen[A](sample: State[RNG, A]) {
 
   def listOf(g: Gen[Int]): Gen[List[A]] =
     g.flatMap(Gen.listOfN(_, this))
-
-  def union(other: Gen[A]): Gen[A] = {
-    boolean.flatMap {
-      case true  => this
-      case false => other
-    }
-  }
 }
 
 object Gen {
@@ -79,6 +72,28 @@ object Gen {
     val string = RNG.map(codes)(_.mkString)
 
     Gen(State(string))
+  }
+
+  def union[A](g1: Gen[A], g2: Gen[A]): Gen[A] =
+    boolean.flatMap {
+      case true => g1
+      case false => g2
+    }
+
+  def weighted[A](g1: (Gen[A], Double), g2: (Gen[A], Double)): Gen[A] = {
+    val (d1, d2) = (g1._2.abs, g2._2.abs)
+    val threshold = d1 / (d1 + d2)
+
+    val sample =
+      State(RNG.double).flatMap { d =>
+        if (d <= threshold) {
+          g1._1.sample
+        } else {
+          g2._1.sample
+        }
+      }
+
+    Gen(sample)
   }
 }
 
