@@ -8,15 +8,46 @@ import Gen._
 import Prop._
 import java.util.concurrent.{Executors, ExecutorService}
 
-trait Prop {
-  def check: Either[(FailedCase, SuccessCount), SuccessCount] = ???
-}
+case class Prop(run: (RNG, TestCases) => Result) {}
 
 object Prop {
+  type TestCases = Int
   type FailedCase = String
   type SuccessCount = Int
 
-  def forAll[A](gen: Gen[A])(f: A => Boolean): Prop = ???
+  sealed trait Result {
+    def isFalsified: Boolean
+  }
+  case object Passed extends Result {
+    override val isFalsified: Boolean = false
+  }
+  case class Falsified(failedCase: FailedCase, successCount: SuccessCount) extends Result {
+    override val isFalsified: Boolean = true
+  }
+
+  def forAll[A](gen: Gen[A])(f: A => Boolean): Prop =
+    Prop { (rng, testCases) =>
+      val (failedCase, successCount) =
+        Gen.listOfN(testCases, gen)
+          .map { as =>
+            as.foldLeft[(FailedCase, SuccessCount)](("", 0)) { (acc, a) =>
+              if (f(a)) {
+                (acc._1, acc._2 + 1)
+              } else {
+                (acc._1 + ", " + a.toString, acc._2)
+              }
+            }
+          }
+          .sample
+          .run(rng)
+          ._1
+
+      if (successCount < testCases) {
+        Falsified(failedCase, successCount)
+      } else {
+        Passed
+      }
+    }
 }
 
 case class Gen[A](sample: State[RNG, A]) {
