@@ -240,27 +240,5 @@ case object Turn extends Input
 case class Machine(locked: Boolean, candies: Int, coins: Int)
 
 object Candy {
-  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = {
-    val z: State[Machine, (Int, Int)] =
-      State { machine =>
-        ((machine.coins, machine.candies), machine)
-      }
-
-    inputs.foldLeft(z) { (acc, input) =>
-      State { machine =>
-        (input, acc.run(machine)._2) match {
-          case (Coin, Machine(true, candies, coins)) if candies > 0  =>
-            ((candies, coins + 1), Machine(false, candies, coins + 1))
-          case (Coin, Machine(true, 0, coins)) =>
-              ((0, coins + 1), Machine(true, 0, coins + 1))
-          case (Coin, m @ Machine(false, candies, coins)) =>
-              ((candies, coins), m)
-          case (Turn, Machine(false, candies, coins)) =>
-            ((candies - 1, coins), Machine(true, candies - 1, coins))
-          case (Turn, m @ Machine(true, candies, coins)) =>
-            ((candies, coins), m)
-           }
-      }
-    }
-  }
+  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = ???
 }
