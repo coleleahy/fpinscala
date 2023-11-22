@@ -3,7 +3,7 @@ package fpinscala.laziness
 import annotation._
 import scala.collection.mutable.ListBuffer
 
-trait Stream[+A] {
+sealed trait Stream[+A] {
   import Stream._
 
   def toList: List[A] = {

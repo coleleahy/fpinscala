@@ -8,10 +8,10 @@
   - Modify loop variable
   - Mutate data structure
   - Set field on object
-  - Throw exception
   - Read input
   - Print output
   - Invoke API
+  - Throw exception
 
 * In contrast with _procedural_ and _object-oriented_ programming, _functional_ programming
   favors _pure_ functions, i.e. functions without side effects.
@@ -27,18 +27,24 @@
 
 * Examples of reifying a would-be side effect:
   - Modify loop variable -> Track it as an argument (`factorial(n - 1, n * valueSoFar)`)
-  - Set field on object -> Return new (immutable) object (`anObject.copy(aField = aValue)`)
-  - Throw exception -> Return exception object (`Either[Value, Exception]`)
-  - Invoke API -> Return invocation object (`Invocation(anAPI, anArgument)`) 
+  - Set field on object -> Return new (immutable) object (`randomNumberGen.copy(seed = newSeed)`)
+  - Invoke API -> Return invocation object (`Charge(paymentsAPI, creditCardInfo)`) 
+  - Throw exception -> Return exception object (`Either[PaymentConfirmation, Exception]`)
 
 * Hallmarks of functional programming:
-  - Reification (of side effects, program state, and functions)
+  - Reification (of side effects, functions, and state)
   - Higher-order functions (`someInts.reduce(addTwoInts)`)
-  - Function combinators (`addTwoInts.andThen(multiplyByThree)`)
-  - Immutable data structures (and data sharing)
-  - Pattern matching over ADTs (`BinaryTree` can be `Leaf(v)` or `Branch(l, r)`)
-  - Recursion (esp. tail recursion)
+  - Function "combinators" (`addTwoInts.andThen(multiplyByThree)`)
+  - Immutable data structures and data sharing (`someInts.prepended(42)`)
+  - Pattern matching over ADTs (`BinaryTreeNode` can be `Leaf(value)` or `Branch(left, right)`)
+  - Recursion (esp. tail recursion to avoid stack overflow)
   - Laziness (of arguments and transformations)
 
 * A major theme in FP -- tying together reification, HOFs, combinators, and laziness -- is to
-  program in a way that separates the concerns of _description_ and _evaluation_.
+  program in a way that separates the concerns of _description_ and _evaluation_. This enables
+  a _declarative_ style of programming where you simply describe _what_ you want, and let an
+  evaluation engine decide _how_ optimally to reach that goal.
+
+* Examples of declarative style, enabled by separation of description and evaluation:
+  - Transforming tabular data with SQL (`employees.groupBy(department).agg(max(salary)).where(department === "Sales")`)
+  - Transforming infinite streams (`Stream.from(0).map(multiplyByThree).filter(isGreaterThanTen)`)

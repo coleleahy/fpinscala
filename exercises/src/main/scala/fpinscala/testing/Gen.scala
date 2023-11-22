@@ -7,8 +7,9 @@ import fpinscala.parallelism.Par.Par
 import Gen._
 import Prop._
 import java.util.concurrent.{Executors, ExecutorService}
+import scala.annotation.tailrec
 
-case class Prop(run: (RNG, TestCases) => Result) {}
+case class Prop(run: (TestCases, RNG) => Result) {}
 
 object Prop {
   type TestCases = Int
@@ -25,8 +26,8 @@ object Prop {
     override val isFalsified: Boolean = true
   }
 
-  def forAll[A](gen: Gen[A])(f: A => Boolean): Prop =
-    Prop { (rng, testCases) =>
+  def oldForAll[A](gen: Gen[A])(f: A => Boolean): Prop =
+    Prop { (testCases, rng) =>
       val (failedCase, successCount) =
         Gen.listOfN(testCases, gen)
           .map { as =>
@@ -48,6 +49,40 @@ object Prop {
         Passed
       }
     }
+
+  // trait RNG { def nextInt: (Int, RNG) }
+  //
+  // case class State[S, +A](run: S => (A, S)) { ... }
+  //
+  // case class Gen[A](sample: State[RNG, A]) { ... }
+  //
+  // sealed trait Result { def isFalsified: Boolean }
+  // case object Passed extends Result { ... }
+  // case class Falsified(failedCase: FailedCase, successCount: SuccessCount) extends Result { ... }
+  //
+  // case class Prop(run: (TestCases, RNG) => Result) { ... }
+  def forAll[A](gen: Gen[A])(f: A => Boolean): Prop = Prop {
+    (testCases, rng) => {
+      @tailrec
+      def loop(
+        rng: RNG,
+        testCases: TestCases,
+        successCount: SuccessCount
+      ): Result = testCases match {
+        case i if i <= 0 =>
+          Passed
+        case i if i > 0 =>
+          val (a, newRng) = gen.sample.run(rng)
+          if (f(a)) {
+            loop(newRng, testCases - 1, successCount + 1)
+          } else {
+            Falsified(a.toString, successCount)
+          }
+      }
+
+      loop(rng, testCases, 0)
+    }
+  }
 }
 
 case class Gen[A](sample: State[RNG, A]) {
