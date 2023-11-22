@@ -1,6 +1,4 @@
-# Functional programming
-
-## What is functional programming (FP)?
+# What is functional programming (FP)?
 
 * A function has a _side effect_ if it does something other than just return a result.
 
