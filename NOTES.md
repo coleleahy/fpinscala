@@ -44,5 +44,10 @@
   evaluation engine decide _how_ optimally to reach that goal.
 
 * Examples of declarative style, enabled by separation of description and evaluation:
-  - Transforming tabular data with SQL (`employees.groupBy(department).agg(max(salary)).where(department === "Sales")`)
-  - Transforming infinite streams (`Stream.from(0).map(multiplyByThree).filter(isGreaterThanTen)`)
+  - SQL transformations (`employees.groupBy(department).agg(max(salary)).where(department === "Sales")`)
+  - Infinite-stream transformations (`Stream.from(0).map(multiplyByThree).filter(isGreaterThanTen)`)
+  - Property-based testing (`forall { (s: String) => s.reverse.reverse == s } && forAll { (i: Int) i - 1 + 1 == i}`)
+
+* Another major theme in FP is that diverse problems, in unrelated domains, can often be modeled
+  in a way that reveals a fundamental "functional" structure that they share in common, in light
+  of which they can be solved using basic FP idioms (`map`, `flatMap`, `traverse`, and so on).

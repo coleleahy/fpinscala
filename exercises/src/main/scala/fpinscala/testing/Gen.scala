@@ -9,12 +9,65 @@ import Prop._
 import java.util.concurrent.{Executors, ExecutorService}
 import scala.annotation.tailrec
 
-case class Prop(run: (TestCases, RNG) => Result) {}
+// trait RNG { def nextInt: (Int, RNG) }
+//
+// case class State[S, +A](run: S => (A, S)) { ... }
+//
+// case class Gen[A](sample: State[RNG, A]) { ... }
+//
+// sealed trait Result { def isFalsified: Boolean }
+// case object Passed extends Result { ... }
+// case class Falsified(failedCase: FailedCase, successCount: SuccessCount) extends Result { ... }
+//
+// case class Prop(run: (TestCases, RNG) => Result) { ... }
+case class Prop(run: (TestCases, RNG, Lineage, MaxSize) => Result) {
+  def &&(that: Prop): Prop = Prop {
+    (testCases, rng, lineage, maxSize) => {
+      val thisLineage = lineage.map(_ + "L")
+      val thatLineage = lineage.map(_ + "R")
+
+      (this.run(testCases, rng, thisLineage, maxSize), that.run(testCases, rng, thatLineage, maxSize)) match {
+        case (Falsified(thisFailedCase, thisSuccessCount), Falsified(thatFailedCase, thatSuccessCount)) =>
+          Falsified(
+            s"$thisFailedCase, $thatFailedCase",
+            thisSuccessCount.min(thatSuccessCount)
+          )
+        case (f: Falsified, Passed) =>
+          f
+        case (Passed, f: Falsified) =>
+          f
+        case (Passed, Passed) =>
+          Passed
+      }
+    }
+  }
+
+  def ||(that: Prop): Prop = Prop {
+    (testCases, rng, lineage, maxSize) => {
+      val thisLineage = lineage.map(_ + "L")
+      val thatLineage = lineage.map(_ + "R")
+
+      (this.run(testCases, rng, thisLineage, maxSize), that.run(testCases, rng, thatLineage, maxSize)) match {
+        case (Passed, _) =>
+          Passed
+        case (_, Passed) =>
+          Passed
+        case (Falsified(thisFailedCase, thisSuccessCount), Falsified(thatFailedCase, thatSuccessCount)) =>
+          Falsified(
+            s"$thisFailedCase, $thatFailedCase",
+            thisSuccessCount.min(thatSuccessCount)
+          )
+      }
+    }
+  }
+}
 
 object Prop {
   type TestCases = Int
   type FailedCase = String
   type SuccessCount = Int
+  type Lineage = Option[String]
+  type MaxSize = Int
 
   sealed trait Result {
     def isFalsified: Boolean
@@ -26,43 +79,8 @@ object Prop {
     override val isFalsified: Boolean = true
   }
 
-  def oldForAll[A](gen: Gen[A])(f: A => Boolean): Prop =
-    Prop { (testCases, rng) =>
-      val (failedCase, successCount) =
-        Gen.listOfN(testCases, gen)
-          .map { as =>
-            as.foldLeft[(FailedCase, SuccessCount)](("", 0)) { (acc, a) =>
-              if (f(a)) {
-                (acc._1, acc._2 + 1)
-              } else {
-                (acc._1 + ", " + a.toString, acc._2)
-              }
-            }
-          }
-          .sample
-          .run(rng)
-          ._1
-
-      if (successCount < testCases) {
-        Falsified(failedCase, successCount)
-      } else {
-        Passed
-      }
-    }
-
-  // trait RNG { def nextInt: (Int, RNG) }
-  //
-  // case class State[S, +A](run: S => (A, S)) { ... }
-  //
-  // case class Gen[A](sample: State[RNG, A]) { ... }
-  //
-  // sealed trait Result { def isFalsified: Boolean }
-  // case object Passed extends Result { ... }
-  // case class Falsified(failedCase: FailedCase, successCount: SuccessCount) extends Result { ... }
-  //
-  // case class Prop(run: (TestCases, RNG) => Result) { ... }
   def forAll[A](gen: Gen[A])(f: A => Boolean): Prop = Prop {
-    (testCases, rng) => {
+    (testCases, rng, lineage, _) => {
       @tailrec
       def loop(
         rng: RNG,
@@ -76,12 +94,20 @@ object Prop {
           if (f(a)) {
             loop(newRng, testCases - 1, successCount + 1)
           } else {
-            Falsified(a.toString, successCount)
+            Falsified(
+              lineage.map(l => s"$l: ").getOrElse("") + s""""$a"""",
+              successCount
+            )
           }
       }
 
       loop(rng, testCases, 0)
     }
+  }
+
+  def forAll[A](g: SGen[A])(f: A => Boolean): Prop = Prop {
+    (testCases, rng, lineage, maxSize) =>
+      forAll(g.forSize(maxSize))(f).run(testCases, rng, lineage, maxSize)
   }
 }
 
@@ -96,6 +122,8 @@ case class Gen[A](sample: State[RNG, A]) {
 
   def listOf(g: Gen[Int]): Gen[List[A]] =
     g.flatMap(Gen.listOfN(_, this))
+
+  def unsized: SGen[A] = SGen(_ => this)
 }
 
 object Gen {
@@ -161,4 +189,15 @@ object Gen {
   }
 }
 
-trait SGen[+A] {}
+case class SGen[A](forSize: Int => Gen[A]) {
+  def map[B](f: A => B): SGen[B] =
+    SGen(i => forSize(i).map(f))
+
+  def flatMap[B](f: A => SGen[B]): SGen[B] =
+    SGen(i => forSize(i).flatMap(f(_).forSize(i)))
+}
+
+object SGen {
+  def listOf[A](g: Gen[A]): SGen[List[A]] =
+    SGen(i => Gen.listOfN(i, g))
+}
