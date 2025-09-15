@@ -31,12 +31,12 @@
 
 * Hallmarks of functional programming:
   - Reification (of side effects, functions, and state)
-  - Higher-order functions (`someInts.reduce(addTwoInts)`)
-  - Function "combinators" (`addTwoInts.andThen(multiplyByThree)`)
-  - Immutable data structures and data sharing (`someInts.prepended(42)`)
-  - Pattern matching over ADTs (`BinaryTreeNode` can be `Leaf(value)` or `Branch(left, right)`)
-  - Recursion (esp. tail recursion to avoid stack overflow)
+  - Higher-order functions (`reduce` in `someIntegers.reduce(addTwoIntegers)`)
+  - Combinator functions (`andThen` in `addTwoIntegers.andThen(findSquareRoot)`)
   - Laziness (of arguments and transformations)
+  - Immutable data structures, data sharing (`someIntegers.prepended(42)`)
+  - Algebraic data types, pattern matching (`BinaryTreeNode` can be `Leaf(value)` or `Branch(left, right)`)
+  - Recursion (esp. tail recursion to avoid stack overflow)
 
 * A major theme in FP -- tying together reification, HOFs, combinators, and laziness -- is to
   program in a way that separates the concerns of _description_ and _evaluation_. This enables
@@ -49,5 +49,5 @@
   - Property-based testing (`forall { (s: String) => s.reverse.reverse == s } && forAll { (i: Int) i - 1 + 1 == i}`)
 
 * Another major theme in FP is that diverse problems, in unrelated domains, can often be modeled
-  in a way that reveals a fundamental "functional" structure that they share in common, in light
+  in a way that reveals a fundamental "functional" structure that they share in common, and in light
   of which they can be solved using basic FP idioms (`map`, `flatMap`, `traverse`, and so on).
