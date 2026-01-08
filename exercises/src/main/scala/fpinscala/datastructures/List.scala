@@ -206,6 +206,12 @@ object List { // `List` companion object. Contains functions for creating and wo
       append(f(a), acc)
     }
 
+  def filterViaFlatMap[A](as: List[A])(p: A => Boolean): List[A] =
+    flatMap(as) { a =>
+      if (p(a)) Cons(a, Nil)
+      else Nil
+    }
+
   def zip[A, B](as: List[A], bs: List[B]): List[(A, B)] = {
     @annotation.tailrec
     def loop(as: List[A], bs: List[B], acc: List[(A, B)]): List[(A, B)] =
