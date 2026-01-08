@@ -201,6 +201,11 @@ object List { // `List` companion object. Contains functions for creating and wo
   def flatMap[A, B](as: List[A])(f: A => List[B]): List[B] =
     flatten(map(as)(f))
 
+  def flatMapEfficient[A, B](as: List[A])(f: A => List[B]): List[B] =
+    foldRight(as, Nil: List[B]) { case (a, acc) =>
+      append(f(a), acc)
+    }
+
   def zip[A, B](as: List[A], bs: List[B]): List[(A, B)] = {
     @annotation.tailrec
     def loop(as: List[A], bs: List[B], acc: List[(A, B)]): List[(A, B)] =
