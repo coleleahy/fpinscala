@@ -28,7 +28,7 @@
   - Modify loop variable -> Track it as an argument (`factorial(n - 1, n * valueSoFar)`)
   - Set field on object -> Return new (immutable) object (`randomNumberGen.copy(seed = newSeed)`)
   - Invoke API -> Return invocation object (`Charge(paymentsAPI, creditCardInfo)`) 
-  - Throw exception -> Return exception object (`Either[PaymentConfirmation, Exception]`)
+  - Throw exception -> Return exception object (`Either[Exception, PaymentConfirmation]`)
 
 * Hallmarks of functional programming:
   - Reification (of side effects, functions, and state)
