@@ -201,7 +201,7 @@ object List { // `List` companion object. Contains functions for creating and wo
   def flatMap[A, B](as: List[A])(f: A => List[B]): List[B] =
     flatten(map(as)(f))
 
-  def flatMapEfficient[A, B](as: List[A])(f: A => List[B]): List[B] =
+  def anotherFlatMap[A, B](as: List[A])(f: A => List[B]): List[B] =
     foldRight(as, Nil: List[B]) { case (a, acc) =>
       append(f(a), acc)
     }
@@ -224,10 +224,26 @@ object List { // `List` companion object. Contains functions for creating and wo
     reverse(loop(as, bs, Nil))
   }
 
+  // Inefficient in that it makes two passes that are the length of the output:
+  // 1. zip makes List[(A, B)] of length N
+  // 2. map makes List[C] of same length N
   def zipWith[A, B, C](as: List[A], bs: List[B])(f: (A, B) => C): List[C] =
     map(zip(as, bs)) {
       case (a, b) => f(a, b)
     }
+
+  // Efficient in that it makes a single pass that's the length of the output.
+  def zipWithEfficient[A, B, C](as: List[A], bs: List[B])(f: (A, B) => C): List[C] = {
+    @annotation.tailrec
+    def loop(as: List[A], bs: List[B], acc: List[C]): List[C] =
+      (as, bs) match {
+        case (Nil, Nil) => acc
+        case (Cons(ha, ta), Cons(hb, tb)) => loop(ta, tb, Cons(f(ha, hb), acc))
+        case _ => throw new RuntimeException("Cannot zip unequal-length lists")
+      }
+
+    reverse(loop(as, bs, Nil))
+  }
 
   @annotation.tailrec
   def startsWith[A](x: List[A], y: List[A]): Boolean =
