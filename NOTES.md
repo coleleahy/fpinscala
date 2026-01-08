@@ -16,6 +16,7 @@
 
 * Downsides of programs using impure functions:
   - Harder to reason about (not _referentially transparent_, so can't substitute to simplify)
+  - Less compile-time safety (compiler only checks type signatures, not side effects)
   - Less reusable/modular/composable (not all clients will want _that_ side effect)
   - Difficult to parallelize (concurrent mutation of shared variable, deadlock, etc.)
   - Difficult to unit test (suite shouldn't _actually_ call the 3rd-party API)
