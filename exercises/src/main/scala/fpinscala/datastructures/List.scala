@@ -163,17 +163,21 @@ object List { // `List` companion object. Contains functions for creating and wo
   def reverseViaFoldLeft[A](l: List[A]): List[A] =
     foldLeft(l, Nil: List[A]) { (acc, x) => Cons(x, acc) }
 
-  // f(x0, f(x1, z))
-  // g(x1, g(x0, z))
+  // List(x0, x1, x2): C(x0, C(x1, C(x2, N)))
+  // foldRight:        f(x0, f(x1, f(x2, z)))
+  // foldLeft:         f(f(f(z, x0), x1), x2)))
+
+  // f(x0, f(x1, z)) - foldRight(xs, z)(f)
+  // g(x1, g(x0, z)) - foldRight(reverse(xs), z)(g), for g(a, b) = f(b, a)
   // g(x1, f(z, x0))
-  // f(f(z, x0), x1)
+  // f(f(z, x0), x1) - foldLeft(xs, z)(f)
   def foldLeftViaRight[A, B](as: List[A], z: B)(f: (B, A) => B): B =
     foldRight(reverse(as), z) { (a, b) => f(b, a) }
 
-  // f(f(z, x0), x1)
-  // g(g(z, x1), x0)
+  // f(f(z, x0), x1) - foldLeft(xs, z)(f)
+  // g(g(z, x1), x0) - foldRight(reverse(xs), z)(g), for g(b, a) = f(a, b)
   // g(f(x1, z), x0)
-  // f(x0, f(x1, z))
+  // f(x0, f(x1, z)) - foldRight(xs, z)(f)
   def foldRightViaLeft[A, B](as: List[A], z: B)(f: (A, B) => B): B =
     foldLeft(reverse(as), z) { (b, a) => f(a, b) }
 
@@ -183,8 +187,8 @@ object List { // `List` companion object. Contains functions for creating and wo
   def flatten[A](ls: List[List[A]]): List[A] =
     foldRight(ls, Nil: List[A])(append)
 
-  def map[A,B](l: List[A])(f: A => B): List[B] =
-    foldRight(l, Nil: List[B]) { (a, bs) => Cons(f(a), bs)}
+  def map[A, B](l: List[A])(f: A => B): List[B] =
+    foldRight(l, Nil: List[B]) { (a, bs) => Cons(f(a), bs) }
 
   def filter[A](as: List[A])(p: A => Boolean): List[A] =
     foldRight(as, Nil: List[A]) { (a, acc) =>
