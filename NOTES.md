@@ -22,7 +22,8 @@
   - Difficult to unit test (suite shouldn't _actually_ call the 3rd-party API)
 
 * How to render an impure function pure? _Reify_ the would-be side effect as an object
-  in its own right, to be processed/evaluated/interpreted/invoked elsewhere.
+  in its own right, to be processed/evaluated/interpreted/invoked elsewhere (separation of
+  concerns).
 
 * Examples of reifying a would-be side effect:
   - Modify loop variable -> Track it as an argument (`factorial(n - 1, n * valueSoFar)`)
@@ -34,21 +35,32 @@
   - Reification (of side effects, functions, and state)
   - Higher-order functions (`reduce` in `someIntegers.reduce(addTwoIntegers)`)
   - Combinator functions (`andThen` in `addTwoIntegers.andThen(findSquareRoot)`)
-  - Laziness (of arguments and transformations)
   - Immutable data structures, data sharing (`someIntegers.prepended(42)`)
   - Algebraic data types, pattern matching (`BinaryTreeNode` can be `Leaf(value)` or `Branch(left, right)`)
+  - Ad-hoc polymorphism (typeclasses) vs. subtype polymorphism (inheritance)
+  - Laziness (of arguments and transformations)
   - Recursion (esp. tail recursion to avoid stack overflow)
 
-* A major theme in FP -- tying together reification, HOFs, combinators, and laziness -- is to
-  program in a way that separates the concerns of _description_ and _evaluation_. This enables
-  a _declarative_ style of programming where you simply describe _what_ you want, and let an
-  evaluation engine decide _how_ optimally to reach that goal.
-
-* Examples of declarative style, enabled by separation of description and evaluation:
-  - SQL transformations (`employees.groupBy(department).agg(max(salary)).where(department === "Sales")`)
-  - Infinite-stream transformations (`Stream.from(0).map(multiplyByThree).filter(isGreaterThanTen)`)
-  - Property-based testing (`forall { (s: String) => s.reverse.reverse == s } && forAll { (i: Int) i - 1 + 1 == i}`)
-
-* Another major theme in FP is that diverse problems, in unrelated domains, can often be modeled
+* A major theme in FP is that diverse problems, in unrelated domains, can often be modeled
   in a way that reveals a fundamental "functional" structure that they share in common, and in light
   of which they can be solved using basic FP idioms (`map`, `flatMap`, `traverse`, and so on).
+
+* Another major theme in FP -- tying together reification, HOFs, combinators, and laziness -- is to
+  program in a way that separates the concerns of _description_ and _evaluation_. This enables
+  a _declarative_ style of programming where you simply describe _what_ you want, and let an
+  evaluation engine decide _how_ optimally to reach that goal. For example:
+  - SQL transformations (`employees.groupBy(department).agg(max(salary)).where(department === "Sales")`)
+  - Stream transformations (`Stream.from(0).map(multiplyByThree).filter(isGreaterThanTen)`)
+  - Property-based testing (`forall { (s: String) => s.reverse.reverse == s } && forAll { (i: Int) i - 1 + 1 == i}`)
+
+* _Typeclasses_ (ad-hoc polymorphism) are another major theme in FP. While this theme is somewhat
+  orthogonal to the idea of programming with pure functions, it's nevertheless aligned with the goal
+  of writing modules amenable to _reuse_ and _composition_. Typeclasses package ancillary behaviors
+  _separately_ from the core class, rather than baking them in by inheritance. Users of the class
+  can choose which behaviors to opt into as needed. The class thus carries fewer dependencies,
+  improving reusability. Furthermore, code can depend only on the required behaviors, but in a way
+  that's more flexible than depending on an interface: classes that are "closed" for modification
+  (e.g. language built-ins or third-party libraries) are still "open" for extension with new behaviors
+  even though their source can't be modified. The code can thus be reused widely. Finally, typeclasses
+  can support _law-like reasoning_ about your code, which aligns with FP's emphasis on mathematics-like
+  functions.
