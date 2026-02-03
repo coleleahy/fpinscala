@@ -246,8 +246,8 @@ object List { // `List` companion object. Contains functions for creating and wo
   }
 
   @annotation.tailrec
-  def startsWith[A](x: List[A], y: List[A]): Boolean =
-    (x, y) match {
+  def startsWith[A](sup: List[A], sub: List[A]): Boolean =
+    (sup, sub) match {
       case (_, Nil) => true
       case (Cons(hx, tx), Cons(hy, ty)) if hx == hy => startsWith(tx, ty)
       case _ => false
