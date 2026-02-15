@@ -18,3 +18,8 @@ RNG.sequence(
 ) { rng }
 
 RNG.flatMap(RNG.int) { n => RNG.nonNegativeLessThan(n) }.apply(rng)
+
+Candy
+  .simulateMachine(List(Coin, Turn, Coin, Turn, Coin, Turn, Coin, Turn))
+  .run(Machine(locked = true, candies = 5, coins = 10))
+  ._1

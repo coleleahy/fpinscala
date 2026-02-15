@@ -21,3 +21,9 @@ Stream.fibsViaUnfold.take(5).toList
 Stream.fibsViaUnfold.takeViaUnfold(5).toList
 
 Stream.fibsViaUnfold.takeWhileViaUnfold(_ < 3).toList
+
+Stream.ones.takeWhile(_ == 1).headOption
+
+Stream(1, 2, 3).scanRight(0)(_ + _).toList
+
+Stream(1, 2, 3).scanRightViaUnfold(0)(_ + _).toList

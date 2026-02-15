@@ -48,7 +48,8 @@
 * Another major theme in FP -- tying together reification, HOFs, combinators, and laziness -- is to
   program in a way that separates the concerns of _description_ and _evaluation_. This enables
   a _declarative_ style of programming where you simply describe _what_ you want, and let an
-  evaluation engine decide _how_ optimally to reach that goal. For example:
+  evaluation engine decide _how_ optimally to reach that goal. The _what_ parts can be composed in
+  a modular (readable) way without performance penalties. For example:
   - SQL transformations (`employees.groupBy(department).agg(max(salary)).where(department === "Sales")`)
   - Stream transformations (`Stream.from(0).map(multiplyByThree).filter(isGreaterThanTen)`)
   - Property-based testing (`forall { (s: String) => s.reverse.reverse == s } && forAll { (i: Int) i - 1 + 1 == i}`)
@@ -64,3 +65,13 @@
   even though their source can't be modified. The code can thus be reused widely. Finally, typeclasses
   can support _law-like reasoning_ about your code, which aligns with FP's emphasis on mathematics-like
   functions.
+
+* Loss of efficiency is a frequent pitfall that must be mitigated. For instance when composing sequences
+  of HOFs over a collection (`myList.map(f).flatMap(g).takeWhile(p)`) we should avoid making multiple
+  passes that do a number of operations proportional to the size of the original collection. (This is
+  why lazy streams, rather than strict lists, are so popular in FP.) Likewise, when reifying state,
+  we lose the efficiency we would have had if we could just mutate stateful variables in-place; instead
+  we need to create an entirely new copy of the state object to represent the "next" state, thus making
+  more work for the garbage collector.
+* composing HOFs (but this can be mitigated in some cases,
+  e.g. by using lazy collections like streams instead of strict collections like lists), and when

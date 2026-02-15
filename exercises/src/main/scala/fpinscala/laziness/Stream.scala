@@ -43,6 +43,17 @@ sealed trait Stream[+A] {
 //        cons(f(h(), hh), rest)
 //    }
 
+  def scanRightViaUnfold[B](z: => B)(f: (A, => B) => B): Stream[B] =
+    unfold(this) {
+      case Cons(h, t) =>
+        lazy val tail = t()
+        lazy val tailScan = tail.scanRightViaUnfold[B](z)(f) // Not stack-safe
+        lazy val headValue = f(h(), tailScan.headOption.getOrElse(z))
+        Some(headValue, tail)
+      case Empty =>
+        None
+    } append Stream(z)
+
   def exists(p: A => Boolean): Boolean = 
     foldRight(false)((a, b) => p(a) || b) // Here `b` is the unevaluated recursive step that folds the tail of the stream. If `p(a)` returns `true`, `b` will never be evaluated and the computation terminates early.
 
@@ -204,6 +215,7 @@ case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
 
 object Stream {
+
   def cons[A](hd: => A, tl: => Stream[A]): Stream[A] = {
     lazy val head = hd
     lazy val tail = tl

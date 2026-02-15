@@ -81,7 +81,15 @@ to get a Scala REPL with access to your exercises, and
 
     > run
 
-To get a menu of possible main methods to execute.
+to get a menu of possible main methods to execute.
+
+Workflow for using the SBT console to test code that you are actively writing:
+- Enter the REPL via `~console` instead of `console`
+- When you want to reload code changes, `:quit` the REPL
+- SBT will compile your code changes and automatically restart the REPL
+
+Workflow for using IntelliJ's Scala worksheets (.sc files) to test code that you are actively writing:
+- When you want to reload code changes, clear the worksheet's results, and re-evaluate the (entire) worksheet
 
 To create project files for the eclipse IDE you can install the
 [sbteclipse](https://github.com/typesafehub/sbteclipse)
