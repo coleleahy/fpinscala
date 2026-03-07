@@ -94,8 +94,8 @@ object Par {
     f: (A, B, C) => D
   ): Par[D] = {
     val g = f.curried
-    val cToD = map2(a, b) { (a, b) => g(a)(b) }
-    map2(cToD, c) { (cToD, c) => cToD(c) }
+    val cToD = map2(a, b)((a, b) => g(a)(b))
+    map2(cToD, c)((cToD, c) => cToD(c))
   }
 
   def map4[A, B, C, D, E](
@@ -105,8 +105,8 @@ object Par {
     d: Par[D]
   )(f: (A, B, C, D) => E): Par[E] = {
     val g = f.curried
-    val dToE = map3(a, b, c) { (a, b, c) => g(a)(b)(c) }
-    map2(dToE, d) { (dToE, d) => dToE(d) }
+    val dToE = map3(a, b, c)((a, b, c) => g(a)(b)(c))
+    map2(dToE, d)((dToE, d) => dToE(d))
   }
 
   def map5[A, B, C, D, E, F](
@@ -117,8 +117,8 @@ object Par {
     e: Par[E]
   )(f: (A, B, C, D, E) => F): Par[F] = {
     val g = f.curried
-    val eToF = map4(a, b, c, d) { (a, b, c, d) => g(a)(b)(c)(d) }
-    map2(eToF, e) { (eToF, e) => eToF(e) }
+    val eToF = map4(a, b, c, d)((a, b, c, d) => g(a)(b)(c)(d))
+    map2(eToF, e)((eToF, e) => eToF(e))
   }
 
   def sequenceSimple[A](as: List[Par[A]]): Par[List[A]] =
@@ -147,8 +147,8 @@ object Par {
     }
 
   def parFilterOldOld[A](as: List[A])(p: A => Boolean): Par[List[A]] = {
-    val parListPairs = parMap(as) { a => (a, p(a)) }
-    map(parListPairs) { pairs => pairs.filter(_._2).map(_._1) }
+    val parListPairs = parMap(as)(a => (a, p(a)))
+    map(parListPairs)(pairs => pairs.filter(_._2).map(_._1))
   }
 
   def parFilterOld[A](as: List[A])(p: A => Boolean): Par[List[A]] = {
@@ -163,7 +163,7 @@ object Par {
   }
 
   def parFilter[A](as: List[A])(p: A => Boolean): Par[List[A]] = {
-    val parOptions = parMap(as) { a => Some(a).filter(p) }
+    val parOptions = parMap(as)(a => Some(a).filter(p))
     map(parOptions)(_.flatten)
   }
 
@@ -208,7 +208,9 @@ object Examples {
     ints: IndexedSeq[Int]
   ): Int = // `IndexedSeq` is a superclass of random-access sequences like `Vector` in the standard library. Unlike lists, these sequences provide an efficient `splitAt` method for dividing them into two parts at a particular index.
     if (ints.size <= 1)
-      ints.headOption getOrElse 0 // `headOption` is a method defined on all collections in Scala. We saw this function in chapter 3.
+      ints.headOption.getOrElse(
+        0
+      ) // `headOption` is a method defined on all collections in Scala. We saw this function in chapter 3.
     else {
       val (l, r) = ints.splitAt(
         ints.length / 2
