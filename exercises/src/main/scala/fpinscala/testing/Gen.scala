@@ -6,7 +6,7 @@ import fpinscala.parallelism._
 import fpinscala.parallelism.Par.Par
 import Gen._
 import Prop._
-import java.util.concurrent.{Executors, ExecutorService}
+import java.util.concurrent.{ExecutorService, Executors}
 import scala.annotation.tailrec
 
 // trait RNG { def nextInt: (Int, RNG) }
@@ -21,43 +21,39 @@ import scala.annotation.tailrec
 //
 // case class Prop(run: (TestCases, RNG) => Result) { ... }
 case class Prop(run: (TestCases, RNG, Lineage, MaxSize) => Result) {
-  def &&(that: Prop): Prop = Prop {
-    (testCases, rng, lineage, maxSize) => {
-      val thisLineage = lineage.map(_ + "L")
-      val thatLineage = lineage.map(_ + "R")
+  def &&(that: Prop): Prop = Prop { (testCases, rng, lineage, maxSize) =>
+    val thisLineage = lineage.map(_ + "L")
+    val thatLineage = lineage.map(_ + "R")
 
-      (this.run(testCases, rng, thisLineage, maxSize), that.run(testCases, rng, thatLineage, maxSize)) match {
-        case (Falsified(thisFailedCase, thisSuccessCount), Falsified(thatFailedCase, thatSuccessCount)) =>
-          Falsified(
-            s"$thisFailedCase, $thatFailedCase",
-            thisSuccessCount.min(thatSuccessCount)
-          )
-        case (f: Falsified, Passed) =>
-          f
-        case (Passed, f: Falsified) =>
-          f
-        case (Passed, Passed) =>
-          Passed
-      }
+    (this.run(testCases, rng, thisLineage, maxSize), that.run(testCases, rng, thatLineage, maxSize)) match {
+      case (Falsified(thisFailedCase, thisSuccessCount), Falsified(thatFailedCase, thatSuccessCount)) =>
+        Falsified(
+          s"$thisFailedCase, $thatFailedCase",
+          thisSuccessCount.min(thatSuccessCount)
+        )
+      case (f: Falsified, Passed) =>
+        f
+      case (Passed, f: Falsified) =>
+        f
+      case (Passed, Passed) =>
+        Passed
     }
   }
 
-  def ||(that: Prop): Prop = Prop {
-    (testCases, rng, lineage, maxSize) => {
-      val thisLineage = lineage.map(_ + "L")
-      val thatLineage = lineage.map(_ + "R")
+  def ||(that: Prop): Prop = Prop { (testCases, rng, lineage, maxSize) =>
+    val thisLineage = lineage.map(_ + "L")
+    val thatLineage = lineage.map(_ + "R")
 
-      (this.run(testCases, rng, thisLineage, maxSize), that.run(testCases, rng, thatLineage, maxSize)) match {
-        case (Passed, _) =>
-          Passed
-        case (_, Passed) =>
-          Passed
-        case (Falsified(thisFailedCase, thisSuccessCount), Falsified(thatFailedCase, thatSuccessCount)) =>
-          Falsified(
-            s"$thisFailedCase, $thatFailedCase",
-            thisSuccessCount.min(thatSuccessCount)
-          )
-      }
+    (this.run(testCases, rng, thisLineage, maxSize), that.run(testCases, rng, thatLineage, maxSize)) match {
+      case (Passed, _) =>
+        Passed
+      case (_, Passed) =>
+        Passed
+      case (Falsified(thisFailedCase, thisSuccessCount), Falsified(thatFailedCase, thatSuccessCount)) =>
+        Falsified(
+          s"$thisFailedCase, $thatFailedCase",
+          thisSuccessCount.min(thatSuccessCount)
+        )
     }
   }
 }
@@ -79,35 +75,32 @@ object Prop {
     override val isFalsified: Boolean = true
   }
 
-  def forAll[A](gen: Gen[A])(f: A => Boolean): Prop = Prop {
-    (testCases, rng, lineage, _) => {
-      @tailrec
-      def loop(
-        rng: RNG,
-        testCases: TestCases,
-        successCount: SuccessCount
-      ): Result = testCases match {
-        case i if i <= 0 =>
-          Passed
-        case i if i > 0 =>
-          val (a, newRng) = gen.sample.run(rng)
-          if (f(a)) {
-            loop(newRng, testCases - 1, successCount + 1)
-          } else {
-            Falsified(
-              lineage.map(l => s"$l: ").getOrElse("") + s""""$a"""",
-              successCount
-            )
-          }
-      }
-
-      loop(rng, testCases, 0)
+  def forAll[A](gen: Gen[A])(f: A => Boolean): Prop = Prop { (testCases, rng, lineage, _) =>
+    @tailrec
+    def loop(
+      rng: RNG,
+      testCases: TestCases,
+      successCount: SuccessCount
+    ): Result = testCases match {
+      case i if i <= 0 =>
+        Passed
+      case i if i > 0 =>
+        val (a, newRng) = gen.sample.run(rng)
+        if (f(a)) {
+          loop(newRng, testCases - 1, successCount + 1)
+        } else {
+          Falsified(
+            lineage.map(l => s"$l: ").getOrElse("") + s""""$a"""",
+            successCount
+          )
+        }
     }
+
+    loop(rng, testCases, 0)
   }
 
-  def forAll[A](g: SGen[A])(f: A => Boolean): Prop = Prop {
-    (testCases, rng, lineage, maxSize) =>
-      forAll(g.forSize(maxSize))(f).run(testCases, rng, lineage, maxSize)
+  def forAll[A](g: SGen[A])(f: A => Boolean): Prop = Prop { (testCases, rng, lineage, maxSize) =>
+    forAll(g.forSize(maxSize))(f).run(testCases, rng, lineage, maxSize)
   }
 }
 
@@ -141,7 +134,7 @@ object Gen {
 
   def chooseTwo(start: Int, stopExclusive: Int): Gen[(Int, Int)] = {
     val chooseOne = choose(start, stopExclusive).sample
-    val chooseTwo = chooseOne.map2(chooseOne) { (_, _) }
+    val chooseTwo = chooseOne.map2(chooseOne)((_, _))
     Gen(chooseTwo)
   }
 
