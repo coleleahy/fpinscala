@@ -174,8 +174,9 @@ object Par {
 
   def flatMap[A, B](a: Par[A])(f: A => Par[B]): Par[B] =
     es => {
-      val aa = run(es)(a).get()
-      run(es)(f(aa))
+      val aa = run(es)(a).get // Get the result of running the Par[A] computation
+      val b = f(aa) // Use that result to define ("choose") a Par[B] computation
+      run(es)(b) // Obtain a Future[B] for the result of the Par[B] computation
     }
 
   def choiceN[A](cond: Par[Int])(choices: List[Par[A]]): Par[A] =
@@ -186,6 +187,18 @@ object Par {
       case true => t
       case false => f
     }
+
+  def join[A](a: Par[Par[A]]): Par[A] =
+    es => {
+      val parA = run(es)(a).get
+      run(es)(parA)
+    }
+
+  def flatMapViaJoin[A, B](a: Par[A])(f: A => Par[B]): Par[B] =
+    join(map(a)(f))
+
+  def joinViaFlatMap[A](parParA: Par[Par[A]]): Par[A] =
+    flatMap(parParA)(parA => parA)
 
   /* Gives us infix syntax for `Par`. */
   implicit class ParOps[A](a: Par[A]) {
