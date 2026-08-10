@@ -10,9 +10,11 @@ trait RNG {
 object RNG {
   case class Simple(seed: Long) extends RNG {
     def nextInt: (Int, RNG) = {
-      val newSeed = (seed * 0x5DEECE66DL + 0xBL) & 0xFFFFFFFFFFFFL // `&` is bitwise AND. We use the current seed to generate a new seed.
+      val newSeed =
+        seed * 0x5deece66dL + 0xbL & 0xffffffffffffL // `&` is bitwise AND. We use the current seed to generate a new seed.
       val nextRNG = Simple(newSeed) // The next state, which is an `RNG` instance created from the new seed.
-      val n = (newSeed >>> 16).toInt // `>>>` is right binary shift with zero fill. The value `n` is our new pseudo-random integer.
+      val n =
+        (newSeed >>> 16).toInt // `>>>` is right binary shift with zero fill. The value `n` is our new pseudo-random integer.
       (n, nextRNG) // The return value is a tuple containing both a pseudo-random integer and the next `RNG` state.
     }
   }
@@ -25,7 +27,7 @@ object RNG {
   def unit[A](a: A): Rand[A] =
     rng => (a, rng)
 
-  def map[A,B](s: Rand[A])(f: A => B): Rand[B] =
+  def map[A, B](s: Rand[A])(f: A => B): Rand[B] =
     rng => {
       val (a, rng2) = s(rng)
       (f(a), rng2)
@@ -75,7 +77,7 @@ object RNG {
 
   // Shows that flatMap is "as strong as (or stronger than)" map.
   def mapViaFlatMap[A, B](s: Rand[A])(f: A => B): Rand[B] =
-    flatMap(s) { (a: A) => unit(f(a)) }
+    flatMap(s)((a: A) => unit(f(a)))
 
   // Shows that flatMap is "as strong as (or stronger than)" map2.
   // Input: r0
@@ -120,7 +122,7 @@ object RNG {
 
   val double: Rand[Double] =
     map(nonNegativeInt) { n =>
-      (-n.toDouble / Int.MinValue)
+      -n.toDouble / Int.MinValue
     }
 
   // Generates double between 0 and 1, not including 1.
@@ -137,20 +139,20 @@ object RNG {
     (n.toDouble / Int.MinValue, r)
   }
 
-  def intDouble(rng: RNG): ((Int,Double), RNG) = {
+  def intDouble(rng: RNG): ((Int, Double), RNG) = {
     val (i, r) = rng.nextInt
     val (d, rr) = double(r)
 
     ((i, d), rr)
   }
 
-  def doubleInt(rng: RNG): ((Double,Int), RNG) = {
+  def doubleInt(rng: RNG): ((Double, Int), RNG) = {
     val ((i, d), r) = intDouble(rng)
 
     ((d, i), r)
   }
 
-  def double3(rng: RNG): ((Double,Double,Double), RNG) = {
+  def double3(rng: RNG): ((Double, Double, Double), RNG) = {
     val (d1, r1) = double(rng)
     val (d2, r2) = double(r1)
     val (d3, r3) = double(r2)
@@ -216,13 +218,13 @@ object State {
   type Rand[A] = State[RNG, A]
 
   def unit[S, A](a: A): State[S, A] =
-    State { s => (a, s) }
+    State(s => (a, s))
 
   def get[S]: State[S, S] =
-    State { s => (s, s) }
+    State(s => (s, s))
 
   def set[S](s: S): State[S, Unit] =
-    State { _ => ((), s) }
+    State(_ => ((), s))
 
   def modify[S](f: S => S): State[S, Unit] = for {
     s <- get
