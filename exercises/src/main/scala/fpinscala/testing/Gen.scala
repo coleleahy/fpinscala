@@ -21,18 +21,11 @@ case class Prop(run: (TestCases, RNG, Lineage, MaxSize) => Result) {
     val thisLineage = lineage.map(_ + "L")
     val thatLineage = lineage.map(_ + "R")
 
-    (this.run(testCases, rng, thisLineage, maxSize), that.run(testCases, rng, thatLineage, maxSize)) match {
-      case (Falsified(thisFailedCase, thisSuccessCount), Falsified(thatFailedCase, thatSuccessCount)) =>
-        Falsified(
-          s"$thisFailedCase, $thatFailedCase",
-          thisSuccessCount.min(thatSuccessCount)
-        )
-      case (f: Falsified, Passed) =>
-        f
-      case (Passed, f: Falsified) =>
-        f
-      case (Passed, Passed) =>
-        Passed
+    // && is lazy in its second argument: it isn't run if running the first
+    // argument is already enough to falsify the conjunction.
+    this.run(testCases, rng, thisLineage, maxSize) match {
+      case thisFalsified: Falsified => thisFalsified
+      case Passed => that.run(testCases, rng, thatLineage, maxSize)
     }
   }
 
@@ -40,15 +33,24 @@ case class Prop(run: (TestCases, RNG, Lineage, MaxSize) => Result) {
     val thisLineage = lineage.map(_ + "L")
     val thatLineage = lineage.map(_ + "R")
 
-    (this.run(testCases, rng, thisLineage, maxSize), that.run(testCases, rng, thatLineage, maxSize)) match {
-      case (Passed, _) =>
-        Passed
-      case (_, Passed) =>
-        Passed
-      case (Falsified(thisFailedCase, thisSuccessCount), Falsified(thatFailedCase, thatSuccessCount)) =>
+    // || is lazy in its second argument: it isn't run if running the first
+    // argument is already enough to verify the disjunction.
+    this.run(testCases, rng, thisLineage, maxSize) match {
+      case Passed => Passed
+      case thisFalsified: Falsified =>
+        that
+          .tag(thisFalsified)
+          .run(testCases, rng, thatLineage, maxSize)
+    }
+  }
+
+  private def tag(thatFalsified: Falsified): Prop = Prop { (testCases, rng, lineage, maxSize) =>
+    run(testCases, rng, lineage, maxSize) match {
+      case Passed => Passed
+      case Falsified(thisFailedCase, thisSuccessCount) =>
         Falsified(
-          s"$thisFailedCase, $thatFailedCase",
-          thisSuccessCount.min(thatSuccessCount)
+          thatFalsified.failedCase + ", " + thisFailedCase,
+          math.min(thatFalsified.successCount, thisSuccessCount)
         )
     }
   }
