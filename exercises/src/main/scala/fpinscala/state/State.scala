@@ -217,7 +217,7 @@ case class State[S, +A](run: S => (A, S)) {
 object State {
   type Rand[A] = State[RNG, A]
 
-  def unit[S, A](a: A): State[S, A] =
+  def unit[S, A](a: => A): State[S, A] =
     State(s => (a, s))
 
   def get[S]: State[S, S] =

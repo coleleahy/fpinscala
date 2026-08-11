@@ -9,17 +9,13 @@ import Prop._
 import java.util.concurrent.{ExecutorService, Executors}
 import scala.annotation.tailrec
 
-// trait RNG { def nextInt: (Int, RNG) }
-//
-// case class State[S, +A](run: S => (A, S)) { ... }
-//
-// case class Gen[A](sample: State[RNG, A]) { ... }
-//
-// sealed trait Result { def isFalsified: Boolean }
-// case object Passed extends Result { ... }
-// case class Falsified(failedCase: FailedCase, successCount: SuccessCount) extends Result { ... }
-//
-// case class Prop(run: (TestCases, RNG) => Result) { ... }
+// Keep these definitions in mind:
+//   trait RNG { def nextInt: (Int, RNG) }
+//   case class State[S, +A](run: S => (A, S)) { ... }
+//   case class Gen[A](sample: State[RNG, A]) { ... }
+//   sealed trait Result { def isFalsified: Boolean }
+//   case object Passed extends Result { ... }
+//   case class Falsified(failedCase: FailedCase, successCount: SuccessCount) extends Result { ... }
 case class Prop(run: (TestCases, RNG, Lineage, MaxSize) => Result) {
   def &&(that: Prop): Prop = Prop { (testCases, rng, lineage, maxSize) =>
     val thisLineage = lineage.map(_ + "L")

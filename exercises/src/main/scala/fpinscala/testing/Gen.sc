@@ -16,8 +16,8 @@ prop.run(50, RNG.Simple(42), None, 0)
 prop.run(50, RNG.Simple(666), None, 0)
 
 val compoundProp =
-  Prop.forAll(Gen.string(5))(_.hashCode < 1000000) &&
-    (Prop.forAll(Gen.string(10))(_.hashCode < 1000000000) || Prop.forAll(Gen.string(20))(_.length < 19))
+  Prop.forAll(Gen.choose(1, 100))(_ < 95) &&
+    (Prop.forAll(Gen.string(10))(_.length < 10) || Prop.forAll(Gen.string(20))(_.length < 19))
 
 compoundProp.run(50, RNG.Simple(1), Some(""), 0)
 
